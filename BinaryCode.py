@@ -144,7 +144,8 @@ def val():
                                     if i in alr_val:  #所有码不能有重复的
                                         tkinter.messagebox.showwarning(title='Warning', message='第%s行重复了!!!'%num)
                                     else:
-                                        alr_val.append(i)    
+                                        alr_val.append(i)
+                           
                         if len(val_value)==len(alr_val):
                             for i in range(after_len):
                                 sum_zero=0
@@ -156,12 +157,118 @@ def val():
                                     sum_z=sum_z+1
                                 else:
                                     sum_z=sum_z-1
+                            Result_output = tk.Toplevel(self.scrollFrame)
+                            Result_output.title("Result output")
+                            Result_output.geometry('700x400')
+                            result_output=tk.Text(Result_output,width=100,height=30) #创建输出结果框 
                             if sum_z==0:
-                                tkinter.messagebox.showinfo(title='Successfully', message='正交!')
-                            else:
-                                tkinter.messagebox.showerror(title='error', message='不正交!')
+                                result_output.insert("insert","结果:\n该组二分码正交!!!\n*********************\n输出正交二分码:\n")
+                                for i in range(n):
+                                    result_output.insert("insert","第%s行:%s\n"%(i+1,val_value[i]))
+                                #tkinter.messagebox.showinfo(title='Successfully', message='正交!')
+                            else:#具体运算流程演示
+                                result_output.insert("insert","结果:\n该组二分码不正交!!!\n*********************\n具体计算过程如下(设用户随机发送0或1):\n")
+                                state_base=['0','1']
+                                state_list=[]
+                                before_trans=np.zeros((n,after_len))
+                                after_trans=np.zeros((n,after_len))
+                                sum=[]
+                                for i in range(n):
+                                    state_list.append(random.choice(state_base))
+                                    result_output.insert("insert","用户%s:%s    %s\n"%(i+1,val_value[i],state_list[i]))
+                                    for j in range(after_len):
+                                        if val_value[i][j]=='0':
+                                            before_trans[i][j]=-1
+                                            if state_list[i]=='0':
+                                                after_trans[i][j]=1
+                                            else:
+                                                after_trans[i][j]=-1
+                                        else:
+                                            before_trans[i][j]=1
+                                            if state_list[i]=='0':
+                                                after_trans[i][j]=-1
+                                            else:
+                                                after_trans[i][j]=1
+                                for j in range(after_len):
+                                    sum_column=0
+                                    for i in range(n):
+                                        sum_column=sum_column+after_trans[i][j]
+                                    sum.append(sum_column)
+                                result_output.insert("insert","sum:\t%s\n"%sum)  
+                                x_list=np.zeros((n,after_len))
+                                 
+                                for j in range(after_len):
+                                    for i in range(n):
+                                        x_list[i][j]=before_trans[i][j]*sum[j]
+                                        
+                                judge_conf=True
+                                sum_list=[]
                                 
-                                
+                                for i in range(n):
+                                    sum_cc=0
+                                    for j in range(after_len):
+                                        sum_cc=sum_cc+x_list[i][j]
+                                    sum_list.append(sum_cc)
+                                        
+                                for i in range(n):
+                                    result_output.insert("insert","用户%s:\t%s\n"%(i+1,before_trans[i]))
+                                    result_output.insert("insert","\t")
+                                    for j in range(after_len):
+                                        if j>0:
+                                            if x_list[i][j]>0:
+                                                result_output.insert("insert","+")
+                                                result_output.insert("insert","%s"%x_list[i][j])
+                                            else:
+                                                result_output.insert("insert","+(")
+                                                result_output.insert("insert","%s"%x_list[i][j])
+                                                result_output.insert("insert",")")
+                                        else:
+                                            result_output.insert("insert","%s"%x_list[i][j])
+    
+                                    if sum_list[i]==8:
+                                        result_output.insert("insert","= %s 是%s,符合原先发送的%s\n"%(sum_list[i],state_list[i],state_list[i]))
+                                    elif sum_list[i]==-8:
+                                        result_output.insert("insert","= %s 是%s,符合原先发送的%s\n"%(sum_list[i],state_list[i],state_list[i]))
+                                    else:
+                                        result_output.insert("insert","=%s 不符合原先发送的%s,该用户%s发送的正交码编译出现错误\n"%(sum_list[i],state_list[i],i+1)) 
+                                        judge_conf=False
+                                if judge_conf==False:
+                                    result_output.insert("insert","如上述流程所示,该组二分码不正交！！！")
+                                         
+                                        
+                                                
+                            def make_menu(w):
+                                global the_menu
+                                the_menu = tk.Menu(w, tearoff=0)
+                                the_menu.add_command(label="Cut")
+                                the_menu.add_command(label="Copy")
+                                the_menu.add_command(label="Paste")
+
+                            def show_menu(e):
+                                w = e.widget
+                                the_menu.entryconfigure("Cut",
+                                command=lambda: w.event_generate("<<Cut>>"))
+                                the_menu.entryconfigure("Copy",
+                                command=lambda: w.event_generate("<<Copy>>"))
+                                the_menu.entryconfigure("Paste",
+                                command=lambda: w.event_generate("<<Paste>>"))
+                                the_menu.tk.call("tk_popup", the_menu, e.x_root, e.y_root)               
+                            #滚动条
+                            roll = tk.Scrollbar(Result_output) #创建滚动条
+                            roll.pack(side = tk.RIGHT,fill = tk.Y)
+                            #复制粘贴剪切效果
+                            make_menu(Result_output)
+                            result_output.bind_class("Text", "<Button-3><ButtonRelease-3>", show_menu)
+                            result_output.pack() 
+                            #绑定
+                            result_output.config(yscrollcommand=roll.set) # text绑定垂直滚动条
+                            roll.config(command=result_output.yview)  
+                            Result_output.mainloop()
+
+                            
+                              
+                    
+                                   
                                     
                                     
                                     
@@ -183,7 +290,7 @@ def val():
                         port_entry.bind('<KeyPress>', lambda e: e if (e.keycode != 299 and e.char in set('01')) or e.keycode==46 or e.keycode==8 else "break")  # 46 represents delete and 8 represents backspace
                         my_entries.append(port_entry)
                         #valuelist[n][a]
-                        
+                     
                         
                         '''
                         if port_entry.get()%2!=0:
@@ -218,14 +325,14 @@ def val():
                     # when packing the scrollframe, we pack scrollFrame itself (NOT the viewPort)
                     
                         
-                        
+                           
                     val_b2 = tk.Button(self.scrollFrame.viewPort, text='confirm', width=10,height=2, command=caculate)
                     val_b2.place(relx=1,rely=1,anchor='se')
                     self.scrollFrame.pack(side="top", fill="both", expand=True)
+                     
                     
                 
-                def printMsg(self, msg):
-                    print(msg)
+                
         
             if __name__ == "__main__":
                 root=tk.Tk()
@@ -437,12 +544,40 @@ def ach():
                         roll = tk.Scrollbar(binary_code ) #创建滚动条
                         roll.pack(side = tk.RIGHT,fill = tk.Y)
                         text_input = tk.Text(binary_code ,width=100,height=20)
+                        
+                        
+                        def Copy_To_Clipboard( string ):
+                            """ 将需要的字符串或文字复制到剪切板 """
+                            r = tk.Tk()
+                            r.withdraw()
+                            r.clipboard_clear()
+                            r.clipboard_append(string)
+                            r.update()
+
+                        
+                        
+                        def copy(self):
+                            Copy_To_Clipboard(self.get('0.0',"end"))
+                        def paste(self):#一键复制效果
+                            """ 读取 """
+                            str=binary_code.clipboard_get()#将粘贴板数据复制回数据
+                            self.insert("insert",str)
+                            
+                            
+                        
+                        button_copy=tk.Button(binary_code,width=8,height=1,command=lambda:copy(text_input),text='copy') 
+                        button_copy.pack()   
+                        button_paste=tk.Button(binary_code,width=8,height=1,command=lambda:paste(text_input),text='paste')
+                        button_paste.pack()
+                        
                         for i in result: #在文本中插入数据
                             text_input.insert('insert','%s\n'%i)
-                            text_input.pack(expand=tk.YES,fill=tk.BOTH)
-                            #绑定
-                            text_input.config(yscrollcommand=roll.set) # text绑定垂直滚动条
-                            roll.config(command=text_input.yview)
+                        text_input.pack(expand=tk.YES,fill=tk.BOTH)
+                        #绑定
+                        text_input.config(yscrollcommand=roll.set) # text绑定垂直滚动条
+                        roll.config(command=text_input.yview)
+                            
+                        
                         #复制粘贴剪切效果
                         make_menu(binary_code)
                         text_input.bind_class("Text", "<Button-3><ButtonRelease-3>", show_menu)
